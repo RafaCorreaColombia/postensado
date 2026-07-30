@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+from utils import cruzar_geometria_y_cargas
 
 st.set_page_config(page_title="Section Checker | ETABS", layout="wide")
 
@@ -79,6 +80,9 @@ else:
     })
 
 # --- 3. INTERFAZ PRINCIPAL ---
+if geom_data.empty:
+    st.warning("⚠️ No hay datos geométricos disponibles para mostrar. Por favor sube tu archivo CSV de ETABS o verifica los datos.")
+    st.stop() # Detiene la ejecución para que no intente pintar la tabla vacía y arrojar KeyError
 col1, col2 = st.columns([1, 1.2])
 
 with col1:
