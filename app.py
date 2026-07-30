@@ -30,47 +30,56 @@ with st.sidebar:
 
 # --- 2. GESTIÓN DE DATOS (MODO DEMO VS DATOS REALES) ---
 if csv_file is not None:
-    # 1. BÚSQUEDA INTELIGENTE DE LA CABECERA EN EL CSV DE ETABS
+    # Búsqueda inteligente de la cabecera en el CSV de ETABS
     lineas = csv_file.getvalue().decode("utf-8").splitlines()
-    
     fila_encabezado = 0
     for i, linea in enumerate(lineas):
         if "Load Case/Combo" in linea or "OutputCase" in linea:
             fila_encabezado = i
             break
             
-    # 2. Leer el CSV saltando hasta la fila de encabezados encontrada
     csv_file.seek(0)
     df_cargas_crudo = pd.read_csv(csv_file, skiprows=fila_encabezado)
     df_cargas_crudo = df_cargas_crudo.dropna(subset=[df_cargas_crudo.columns[3]])
     
-    # Selector dinámico de la combinación dentro del CSV real
+    # SELECTORES DINÁMICOS BASADOS EN EL CSV REAL
+    st.sidebar.markdown("---")
+    st.sidebar.header("3. Selector de Elemento")
+    
+    stories_disponibles = df_cargas_crudo['Story'].dropna().unique().tolist()
+    story_elegido = st.sidebar.selectbox("Seleccionar Story:", stories_disponibles)
+    
+    # Filtrar vigas disponibles para ese Story
+    beams_disponibles = df_cargas_crudo[df_cargas_crudo['Story'] == story_elegido]['Beam'].dropna().unique().tolist()
+    beam_elegido = st.sidebar.selectbox("Seleccionar Beam (Viga):", beams_disponibles)
+    
+    # Selector de combinación
     col_combo = 'OutputCase' if 'OutputCase' in df_cargas_crudo.columns else 'Load Case/Combo'
     combos_disponibles = df_cargas_crudo[col_combo].unique().tolist()
-    combo_elegido = st.sidebar.selectbox("Seleccionar Combinación de ETABS:", combos_disponibles)
+    combo_elegido = st.sidebar.selectbox("Seleccionar Combinación:", combos_disponibles)
     
-    # NOTA: Cuando tengas listo el parser completo de e2k, reemplazas geom_base por tu DataFrame real.
-    estaciones = np.linspace(0, 5, 11)
+    # Extraer las estaciones reales que ETABS usó para este Beam específico
+    df_beam_real = df_cargas_crudo[(df_cargas_crudo['Story'] == story_elegido) & (df_cargas_crudo['Beam'] == beam_elegido)]
+    estaciones_reales = sorted(df_beam_real['Station'].astype(float).unique().tolist())
+    
+    # Construir la geometría base inmutable usando las estaciones reales del CSV
     geom_base = pd.DataFrame({
-        "Frame": "9",  # Nota: En tu CSV de ETABS el ID de la viga B1 es '9'
-        "Station (m)": estaciones,
+        "Station (m)": estaciones_reales,
         "b (mm)": 250.0,
-        "h (mm)": 100.0 + 400.0 * (estaciones / 5.0)
+        "h (mm)": 100.0 + 400.0 * (np.array(estaciones_reales) / max(estaciones_reales)) if max(estaciones_reales) > 0 else 500.0
     })
     
     try:
-        # AQUÍ ES DONDE LLAMAS A TU ARCHIVO UTILS.PY
-        geom_data = cruzar_geometria_y_cargas(geom_base, df_cargas_crudo, combo_elegido)
-        st.success(f"¡Cruce exitoso con la combinación '{combo_elegido}'!")
+        geom_data = cruzar_geometria_y_cargas(geom_base, df_cargas_crudo, combo_elegido, story_elegido, beam_elegido)
+        st.success(f"¡Cruce exitoso para **{story_elegido} - {beam_elegido}** ({combo_elegido})!")
     except Exception as e:
         st.error(f"Error al cruzar datos: {e}")
         geom_data = pd.DataFrame()
 
 else:
-    # Modo Demo (El voladizo de Kike para pruebas rápidas sin archivos)
-    st.info("💡 Modo Demo activado: Mostrando el voladizo de Kike (5m, peralte variable 100mm a 500mm). Sube tu CSV para usar datos reales.")
+    # Modo Demo (El voladizo de Kike)
+    st.info("💡 Modo Demo activado. Sube tu CSV de ETABS para usar datos reales.")
     estaciones = np.linspace(0, 5, 11)
-    
     geom_data = pd.DataFrame({
         "Station (m)": estaciones,
         "b (mm)": 250.0,
