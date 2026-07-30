@@ -114,13 +114,20 @@ with col2:
     df_pt = st.data_editor(pt_init, use_container_width=True, hide_index=True)
 
 # --- 4. MOTOR DE CÁLCULO (SECTION CHECKER) ---
-# Unimos Geometría inmutable + Diseño PT
 df = pd.merge(geom_data, df_pt, on="Station (m)")
 
-# 🛠️ LÍNEA DE DEPUGURACIÓN (Muestra en pantalla las columnas activas)
-with st.expander("🔍 Ver columnas activas en el DataFrame (Depuración)"):
-    st.write(df.columns.tolist())
-    st.dataframe(df.head(2))
+# 💡 FORZAR CONVERSIÓN TAMBIÉN EN LA TABLA UNIDA
+cols_numericas = ["Station (m)", "b (mm)", "h (mm)", "P_Frame (kN)", "V2 (kN)", "M3 (kN-m)", "d_top (mm)", "Torones", "Pérdidas (%)"]
+for c in cols_numericas:
+    if c in df.columns:
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+
+# Depuración visual de tipos de datos en la app
+with st.expander("🔍 Verificar Tipos de Datos (Depuración dtypes)"):
+    st.dataframe(pd.DataFrame({
+        "Columna": df.columns,
+        "Tipo de Dato": df.dtypes.astype(str)
+    }))
 
 # Cálculos Estación por Estación
 df["A (mm2)"] = df["b (mm)"] * df["h (mm)"]
@@ -135,7 +142,7 @@ df["P_efectiva (kN)"] = df["Torones"] * P_toron * (1 - df["Pérdidas (%)"]/100)
 df["e (mm)"] = df["c_sup (mm)"] - df["d_top (mm)"] 
 df["Momento_PT (kN-m)"] = (df["P_efectiva (kN)"] * df["e (mm)"]) / 1000 
 
-# Esfuerzos (Convención: Compresión es +, Tensión es -)
+# Esfuerzos (Ahora sí operará con floats puros sin arrojar TypeError)
 sigma_axial = (df["P_efectiva (kN)"] * 1000 / df["A (mm2)"]) - (df["P_Frame (kN)"] * 1000 / df["A (mm2)"])
 
 sigma_M_sup = (df["M3 (kN-m)"] * 1e6) / df["S_sup (mm3)"] 
