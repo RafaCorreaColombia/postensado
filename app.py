@@ -117,6 +117,11 @@ with col2:
 # Unimos Geometría inmutable + Diseño PT
 df = pd.merge(geom_data, df_pt, on="Station (m)")
 
+# 🛠️ LÍNEA DE DEPUGURACIÓN (Muestra en pantalla las columnas activas)
+with st.expander("🔍 Ver columnas activas en el DataFrame (Depuración)"):
+    st.write(df.columns.tolist())
+    st.dataframe(df.head(2))
+
 # Cálculos Estación por Estación
 df["A (mm2)"] = df["b (mm)"] * df["h (mm)"]
 df["c_sup (mm)"] = df["h (mm)"] / 2.0
@@ -127,22 +132,18 @@ df["S_inf (mm3)"] = df["I (mm4)"] / df["c_inf (mm)"]
 
 # Dinámica del PT
 df["P_efectiva (kN)"] = df["Torones"] * P_toron * (1 - df["Pérdidas (%)"]/100)
-df["e (mm)"] = df["c_sup (mm)"] - df["d_top (mm)"] # Positivo si está por encima del centroide
-df["Momento_PT (kN-m)"] = (df["P_efectiva (kN)"] * df["e (mm)"]) / 1000 # Pe
+df["e (mm)"] = df["c_sup (mm)"] - df["d_top (mm)"] 
+df["Momento_PT (kN-m)"] = (df["P_efectiva (kN)"] * df["e (mm)"]) / 1000 
 
 # Esfuerzos (Convención: Compresión es +, Tensión es -)
-# 1. Axiales (PT comprime +, Frame P se asume tracción + en ETABS, por eso restamos)
 sigma_axial = (df["P_efectiva (kN)"] * 1000 / df["A (mm2)"]) - (df["P_Frame (kN)"] * 1000 / df["A (mm2)"])
 
-# 2. Flexión por Carga (M3 negativo tracciona arriba, comprime abajo)
 sigma_M_sup = (df["M3 (kN-m)"] * 1e6) / df["S_sup (mm3)"] 
 sigma_M_inf = -(df["M3 (kN-m)"] * 1e6) / df["S_inf (mm3)"]
 
-# 3. Flexión por PT (e positivo comprime arriba, tracciona abajo)
 sigma_PT_sup = (df["Momento_PT (kN-m)"] * 1e6) / df["S_sup (mm3)"]
 sigma_PT_inf = -(df["Momento_PT (kN-m)"] * 1e6) / df["S_inf (mm3)"]
 
-# 4. Sumatoria Final
 df["Sigma_Top (MPa)"] = sigma_axial + sigma_M_sup + sigma_PT_sup
 df["Sigma_Bot (MPa)"] = sigma_axial + sigma_M_inf + sigma_PT_inf
 
