@@ -27,23 +27,46 @@ with st.sidebar:
     e2k_file = st.file_uploader("Subir .e2k (Geometría)", type=['e2k'])
     csv_file = st.file_uploader("Subir CSV (Fuerzas)", type=['csv'])
 
-# --- 2. GESTIÓN DE DATOS (MOCKUP PARA PROBAR HOY MISMO) ---
-# Si no hay archivos, generamos el voladizo de Kike para poder iterar inmediatamente
-if e2k_file is None and csv_file is None:
-    st.info("💡 Modo Demo activado: Mostrando el voladizo de Kike (5m, peralte variable 100mm a 500mm). Sube tus archivos para usar datos reales.")
+# --- 2. GESTIÓN DE DATOS (MODO DEMO VS DATOS REALES) ---
+if csv_file is not None:
+    # Si subes el CSV de ETABS, leemos las fuerzas reales
+    df_cargas_crudo = pd.read_csv(csv_file)
+    
+    # Selector dinámico de la combinación dentro del CSV real
+    col_combo = 'OutputCase' if 'OutputCase' in df_cargas_crudo.columns else 'Load Case/Combo'
+    combos_disponibles = df_cargas_crudo[col_combo].unique().tolist()
+    combo_elegido = st.sidebar.selectbox("Seleccionar Combinación de ETABS:", combos_disponibles)
+    
+    # NOTA: Cuando tengas listo el parser completo de e2k, reemplazas geom_data por tu DataFrame real.
+    # Por ahora, usamos el DataFrame de prueba de Kike como base geométrica para asegurar que la app no falle.
+    estaciones = np.linspace(0, 5, 11)
+    geom_base = pd.DataFrame({
+        "Frame": "Viga_Voladizo_1",
+        "Station (m)": estaciones,
+        "b (mm)": 250.0,
+        "h (mm)": 100.0 + 400.0 * (estaciones / 5.0)
+    })
+    
+    try:
+        # AQUÍ ES DONDE LLAMAS A TU ARCHIVO UTILS.PY
+        geom_data = cruzar_geometria_y_cargas(geom_base, df_cargas_crudo, combo_elegido)
+        st.success(f"¡Cruce exitoso con la combinación '{combo_elegido}'!")
+    except Exception as e:
+        st.error(f"Error al cruzar datos: {e}")
+        geom_data = pd.DataFrame()
+
+else:
+    # Modo Demo (El voladizo de Kike para pruebas rápidas sin archivos)
+    st.info("💡 Modo Demo activado: Mostrando el voladizo de Kike (5m, peralte variable 100mm a 500mm). Sube tu CSV para usar datos reales.")
     estaciones = np.linspace(0, 5, 11)
     
-    # Geometría inmutable (Solo Lectura)
     geom_data = pd.DataFrame({
         "Station (m)": estaciones,
         "b (mm)": 250.0,
-        "h (mm)": 100.0 + 400.0 * (estaciones / 5.0), # De 100 a 500mm
-        "P_Frame (kN)": 0.0, # Asumimos 0 axial del pórtico para el demo
-        "M3 (kN-m)": -45.0 * (estaciones / 5.0)**2 # Parabólico negativo
+        "h (mm)": 100.0 + 400.0 * (estaciones / 5.0),
+        "P_Frame (kN)": 0.0, 
+        "M3 (kN-m)": -45.0 * (estaciones / 5.0)**2 
     })
-else:
-    st.warning("El parser de archivos está en desarrollo para Fase 2. Usando Modo Demo.")
-    geom_data = pd.DataFrame() # Aquí iría tu función merge_asof()
 
 # --- 3. INTERFAZ PRINCIPAL ---
 col1, col2 = st.columns([1, 1.2])
