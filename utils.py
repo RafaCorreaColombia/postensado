@@ -43,4 +43,12 @@ def cruzar_geometria_y_cargas(df_geometria, df_cargas, combo_seleccionado, story
         df_fusionado = df_fusionado.dropna(subset=['P'])
         
     df_fusionado = df_fusionado.drop(columns=['Station_Load'], errors='ignore')
+    
+    # 💡 RENOMBRAR PARA UNIFICAR NOMBRES CON APP.PY (Solución 1)
+    df_fusionado = df_fusionado.rename(columns={
+        "P": "P_Frame (kN)",
+        "V2": "V2 (kN)",
+        "M3": "M3 (kN-m)"
+    })
+    
     return df_fusionado
