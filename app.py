@@ -29,19 +29,29 @@ with st.sidebar:
 
 # --- 2. GESTIÓN DE DATOS (MODO DEMO VS DATOS REALES) ---
 if csv_file is not None:
-    # Si subes el CSV de ETABS, leemos las fuerzas reales
-    df_cargas_crudo = pd.read_csv(csv_file)
+    # 1. BÚSQUEDA INTELIGENTE DE LA CABECERA EN EL CSV DE ETABS
+    lineas = csv_file.getvalue().decode("utf-8").splitlines()
+    
+    fila_encabezado = 0
+    for i, linea in enumerate(lineas):
+        if "Load Case/Combo" in linea or "OutputCase" in linea:
+            fila_encabezado = i
+            break
+            
+    # 2. Leer el CSV saltando hasta la fila de encabezados encontrada
+    csv_file.seek(0)
+    df_cargas_crudo = pd.read_csv(csv_file, skiprows=fila_encabezado)
+    df_cargas_crudo = df_cargas_crudo.dropna(subset=[df_cargas_crudo.columns[3]])
     
     # Selector dinámico de la combinación dentro del CSV real
     col_combo = 'OutputCase' if 'OutputCase' in df_cargas_crudo.columns else 'Load Case/Combo'
     combos_disponibles = df_cargas_crudo[col_combo].unique().tolist()
     combo_elegido = st.sidebar.selectbox("Seleccionar Combinación de ETABS:", combos_disponibles)
     
-    # NOTA: Cuando tengas listo el parser completo de e2k, reemplazas geom_data por tu DataFrame real.
-    # Por ahora, usamos el DataFrame de prueba de Kike como base geométrica para asegurar que la app no falle.
+    # NOTA: Cuando tengas listo el parser completo de e2k, reemplazas geom_base por tu DataFrame real.
     estaciones = np.linspace(0, 5, 11)
     geom_base = pd.DataFrame({
-        "Frame": "Viga_Voladizo_1",
+        "Frame": "9",  # Nota: En tu CSV de ETABS el ID de la viga B1 es '9'
         "Station (m)": estaciones,
         "b (mm)": 250.0,
         "h (mm)": 100.0 + 400.0 * (estaciones / 5.0)
