@@ -103,12 +103,13 @@ if csv_file is not None:
 
     with col_t:
         st.subheader("➰ Perfil del Tendón (PT Builder)")
-        st.caption("💡 **Unidades:** **x** (m), **d_top** (mm desde fibra superior de losa), **Pérdidas** (%).")
+        st.caption("💡 **Unidades:** **x** (m), **d_top** (mm desde fibra superior de losa), **Pérdida Inicial** (%), **Pérdida Largo Plazo** (%).")
         tendon_init = pd.DataFrame({
             "x": [0.0, L_total/2, L_total], 
             "d_top": [50.0, 50.0, 250.0], 
             "Torones": [3, 3, 3], 
-            "Pérdidas (%)": [18.7, 18.75, 18.75]
+            "Pérdida Inicial (%)": [12.5, 12.5, 12.5],
+            "Pérdida Largo Plazo (%)": [6.25, 6.25, 6.25]
         })
         df_tendon_param = st.data_editor(tendon_init, num_rows="dynamic", use_container_width=True, hide_index=True)
 
