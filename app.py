@@ -81,13 +81,26 @@ if csv_file is not None:
     with col_g:
         st.subheader("📐 Geometría Paramétrica")
         st.info(f"Longitud total detectada: **{L_total:.2f} m**")
-        # Tabla inicial básica (hasta que conectes el parser del E2K)
+        
+        # Nota explicativa de unidades para Geometría
+        st.caption("💡 **Unidades:** **x** (posición en metros), **b** (ancho en mm), **h** (peralte/altura en mm).")
+        
+        # Tabla inicial básica
         geom_init = pd.DataFrame({"x": [0.0, L_total], "b": [250.0, 250.0], "h": [500.0, 500.0]})
         df_geom_param = st.data_editor(geom_init, num_rows="dynamic", use_container_width=True, hide_index=True)
 
     with col_t:
         st.subheader("➰ Perfil del Tendón (Puntos de Control)")
         st.info("Define los cambios de trazado. El motor interpolará el resto.")
+        
+        # Nota explicativa súper clara sobre d_top
+        st.markdown(
+            "📐 **¿Qué es `d_top`?** Es el recubrimiento superior. Se mide desde la **fibra superior** de la losa/viga "
+            "hacia abajo hasta el centroide del cable. Ingrésalo siempre como un valor **positivo**. "
+            "*(No te preocupes por el signo, la gráfica ya sabe dibujarlo hacia abajo).* "
+        )
+        st.caption("💡 **Unidades:** **x** (metros), **d_top** (mm), **Pérdidas** (%).")
+        
         # Tres puntos básicos: inicio, medio, fin
         tendon_init = pd.DataFrame({"x": [0.0, L_total/2, L_total], "d_top": [50.0, 400.0, 50.0], "Torones": [3, 3, 3], "Pérdidas (%)": [15.0, 15.0, 15.0]})
         df_tendon_param = st.data_editor(tendon_init, num_rows="dynamic", use_container_width=True, hide_index=True)
