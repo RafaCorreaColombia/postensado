@@ -84,17 +84,32 @@ if csv_file is not None:
     # --- 3. DISEÑO PARAMÉTRICO ---
     st.markdown("---")
     st.header("2. Diseño Paramétrico del Eje")
-    st.markdown("💡 *Agrega filas con el botón `+` para definir quiebres, cambios de sección o cartelas.*")
+    st.markdown("💡 *Agrega filas con `+` para definir variaciones del ala o del alma lungo el eje.*")
     
     col_g, col_t = st.columns(2)
     with col_g:
-        st.subheader("📐 Geometría (Section Builder)")
-        geom_init = pd.DataFrame({"x": [0.0, L_total], "b": [250.0, 250.0], "h": [500.0, 500.0]})
+        st.subheader("📐 Geometría de Sección T (Losa + Viga)")
+        st.caption("💡 **Unidades:** **b_w** (ancho alma en mm), **h_w** (peralte viga en mm), **b_lado** (ala efectiva a CADA LADO en mm), **h_f** (espesor losa en mm).")
+        
+        # Geometría inicial con la losa
+        geom_init = pd.DataFrame({
+            "x": [0.0, L_total], 
+            "b_w": [250.0, 250.0], 
+            "h_w": [500.0, 500.0],
+            "b_lado": [300.0, 300.0],  # Ej: 300mm a cada lado = 850mm total de compresión
+            "h_f": [100.0, 100.0]       # Losa de 10cm
+        })
         df_geom_param = st.data_editor(geom_init, num_rows="dynamic", use_container_width=True, hide_index=True)
 
     with col_t:
         st.subheader("➰ Perfil del Tendón (PT Builder)")
-        tendon_init = pd.DataFrame({"x": [0.0, L_total/2, L_total], "d_top": [50.0, 400.0, 50.0], "Torones": [3, 3, 3], "Pérdidas (%)": [15.0, 15.0, 15.0]})
+        st.caption("💡 **Unidades:** **x** (m), **d_top** (mm desde fibra superior de losa), **Pérdidas** (%).")
+        tendon_init = pd.DataFrame({
+            "x": [0.0, L_total/2, L_total], 
+            "d_top": [50.0, 400.0, 50.0], 
+            "Torones": [3, 3, 3], 
+            "Pérdidas (%)": [15.0, 15.0, 15.0]
+        })
         df_tendon_param = st.data_editor(tendon_init, num_rows="dynamic", use_container_width=True, hide_index=True)
 
     # --- 4. ENSAMBLAJE (RESOLVER ESTADOS) ---
