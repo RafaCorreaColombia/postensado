@@ -36,9 +36,16 @@ def construir_alineamiento(df_cargas_crudo, story, secuencia_vigas, combo):
 # --- 2. GEOMETRY BUILDER ---
 def construir_geometria(x_estaciones, df_tramos_geom):
     """Interpola paramétricamente b y h para cada estación de ETABS."""
-    # Para el MVP, asumimos interpolación lineal a lo largo de toda la viga
-    b_interp = np.interp(x_estaciones, df_tramos_geom['x'], df_tramos_geom['b'])
-    h_interp = np.interp(x_estaciones, df_tramos_geom['x'], df_tramos_geom['h'])
+    
+    # 💡 LIMPIEZA: Ignorar filas vacías de la UI, forzar números y ordenar de menor a mayor
+    df_g_limpio = df_tramos_geom.copy()
+    for col in ['x', 'b', 'h']:
+        df_g_limpio[col] = pd.to_numeric(df_g_limpio[col], errors='coerce')
+    df_g_limpio = df_g_limpio.dropna(subset=['x', 'b', 'h']).sort_values('x')
+    
+    # Interpolación
+    b_interp = np.interp(x_estaciones, df_g_limpio['x'], df_g_limpio['b'])
+    h_interp = np.interp(x_estaciones, df_g_limpio['x'], df_g_limpio['h'])
     
     df_g = pd.DataFrame({'x': x_estaciones, 'b': b_interp, 'h': h_interp})
     df_g['A'] = df_g['b'] * df_g['h']
@@ -52,12 +59,18 @@ def construir_geometria(x_estaciones, df_tramos_geom):
 # --- 3. TENDON BUILDER ---
 def construir_tendon(x_estaciones, df_perfil_tendon, P_toron=140.0):
     """Interpola el perfil del tendón y calcula propiedades efectivas."""
-    # Interpola la posición del cable d_top
-    d_top_interp = np.interp(x_estaciones, df_perfil_tendon['x'], df_perfil_tendon['d_top'])
+    
+    # 💡 LIMPIEZA: Lo mismo para el tendón
+    df_t_limpio = df_perfil_tendon.copy()
+    for col in ['x', 'd_top']:
+        df_t_limpio[col] = pd.to_numeric(df_t_limpio[col], errors='coerce')
+    df_t_limpio = df_t_limpio.dropna(subset=['x', 'd_top']).sort_values('x')
+    
+    d_top_interp = np.interp(x_estaciones, df_t_limpio['x'], df_t_limpio['d_top'])
     
     # Asume valores uniformes del primer tramo para simplificar este ejemplo
-    torones = df_perfil_tendon['Torones'].iloc[0]
-    perdidas = df_perfil_tendon['Pérdidas (%)'].iloc[0]
+    torones = df_t_limpio['Torones'].dropna().iloc[0] if not df_t_limpio['Torones'].dropna().empty else 3
+    perdidas = df_t_limpio['Pérdidas (%)'].dropna().iloc[0] if not df_t_limpio['Pérdidas (%)'].dropna().empty else 15.0
     
     df_t = pd.DataFrame({'x': x_estaciones, 'd_top': d_top_interp})
     df_t['Torones'] = torones
