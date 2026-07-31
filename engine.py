@@ -36,33 +36,56 @@ def construir_alineamiento(df_cargas_crudo, story, secuencia_vigas, mapeo_combos
             
     return df_total
 
-# --- 2. SECTION BUILDER (NUEVA ARQUITECTURA) ---
-# Aquí se aísla TODO lo que tenga que ver con la sección transversal.
+# --- 2. SECTION BUILDER (SOPORTE SECCIÓN T / LOSA MONOLÍTICA) ---
 def construir_propiedades_seccion(x_estaciones, df_tramos_geom, diametro_ducto=0.0):
     """
-    Construye las propiedades geométricas. 
-    (Más adelante esto será una Clase independiente que lea Sección Rectangular, T, L, etc.)
+    Calcula propiedades geométricas para sección T/L (Viga + Losa monolítica).
+    Fibra superior de la losa coincide con la fibra superior de la viga.
     """
     df_g_limpio = df_tramos_geom.copy()
-    for col in ['x', 'b', 'h']:
-        df_g_limpio[col] = pd.to_numeric(df_g_limpio[col], errors='coerce')
-    df_g_limpio = df_g_limpio.dropna(subset=['x', 'b', 'h']).sort_values('x')
     
-    # 1. Geometría Básica Interpolada (Próximamente: Lectura E2K)
-    b_interp = np.interp(x_estaciones, df_g_limpio['x'], df_g_limpio['b'])
-    h_interp = np.interp(x_estaciones, df_g_limpio['x'], df_g_limpio['h'])
+    # Columnas esperadas: x, b_w, h_w, b_lado, h_f
+    # (b_w = ancho alma, h_w = altura viga, b_lado = ala a cada lado, h_f = espesor losa)
+    cols_num = ['x', 'b_w', 'h_w', 'b_lado', 'h_f']
+    for col in cols_num:
+        if col in df_g_limpio.columns:
+            df_g_limpio[col] = pd.to_numeric(df_g_limpio[col], errors='coerce')
+            
+    df_g_limpio = df_g_limpio.dropna(subset=['x', 'b_w', 'h_w']).sort_values('x')
     
-    df_g = pd.DataFrame({'x': x_estaciones, 'b': b_interp, 'h': h_interp})
+    # 1. Interpolación de componentes geométricas
+    b_w = np.interp(x_estaciones, df_g_limpio['x'], df_g_limpio['b_w'])
+    h_w = np.interp(x_estaciones, df_g_limpio['x'], df_g_limpio['h_w'])
+    b_lado = np.interp(x_estaciones, df_g_limpio['x'], df_g_limpio['b_lado']) if 'b_lado' in df_g_limpio.columns else np.zeros(len(x_estaciones))
+    h_f = np.interp(x_estaciones, df_g_limpio['x'], df_g_limpio['h_f']) if 'h_f' in df_g_limpio.columns else np.zeros(len(x_estaciones))
     
-    # 2. Propiedades Brutas (Clase U - Servicio)
-    df_g['y_cg'] = df_g['h'] / 2.0  # Medido desde arriba
-    df_g['A_bruta'] = df_g['b'] * df_g['h']
-    df_g['I_bruta'] = (df_g['b'] * df_g['h']**3) / 12.0
+    df_g = pd.DataFrame({'x': x_estaciones, 'b_w': b_w, 'h_w': h_w, 'b_lado': b_lado, 'h_f': h_f})
     
-    # 3. Propiedades Netas (NSR-10 C.18.2.6 - Transferencia)
+    # Ancho total del ala (b_total = b_w + 2 * b_lado)
+    df_g['b_total'] = df_g['b_w'] + 2.0 * df_g['b_lado']
+    df_g['h'] = df_g['h_w'] # Peralte total de la viga
+    
+    # 2. Mecánica de Sección T (Áreas)
+    # A_losa_sobresaliente = 2 * b_lado * h_f
+    A_web = df_g['b_w'] * df_g['h_w']
+    A_flange = 2.0 * df_g['b_lado'] * df_g['h_f']
+    df_g['A_bruta'] = A_web + A_flange
+    
+    # 3. Centroide medido desde la fibra superior (y_cg)
+    # y_cg = (A_web * (h_w/2) + A_flange * (h_f/2)) / A_bruta
+    y_web = df_g['h_w'] / 2.0
+    y_flange = df_g['h_f'] / 2.0
+    df_g['y_cg'] = np.where(df_g['A_bruta'] > 0, 
+                            (A_web * y_web + A_flange * y_flange) / df_g['A_bruta'], 
+                            df_g['h_w'] / 2.0)
+    
+    # 4. Inercia Bruta (Steiner respecto a y_cg)
+    I_web = (df_g['b_w'] * df_g['h_w']**3) / 12.0 + A_web * (df_g['y_cg'] - y_web)**2
+    I_flange = (2.0 * df_g['b_lado'] * df_g['h_f']**3) / 12.0 + A_flange * (df_g['y_cg'] - y_flange)**2
+    df_g['I_bruta'] = I_web + I_flange
+    
+    # 5. Descuento de Ductos
     A_ducto = np.pi * (diametro_ducto**2) / 4.0
-    # Nota: I_ducto respecto al eje de la sección se recalculará en el ensamblaje 
-    # cuando conozcamos la posición del cable (d_top)
     df_g['A_ducto'] = A_ducto
     
     return df_g
