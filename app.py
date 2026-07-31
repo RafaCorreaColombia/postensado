@@ -23,9 +23,9 @@ with st.sidebar:
     csv_file = st.file_uploader("Fuerzas CSV (ETABS)", type=['csv'])
     
     st.header("2. Materiales NSR-10")
-    fc = st.number_input("f'c (MPa) [Servicio]", value=28.0)
-    fci = st.number_input("f'ci (MPa) [Transferencia]", value=21.0)
-    P_toron = st.number_input("Fuerza por Torón (kN)", value=140.0)
+    fc = st.number_input("f'c (MPa) [Servicio]", value=35.0)
+    fci = st.number_input("f'ci (MPa) [Transferencia]", value=28.0)
+    P_toron = st.number_input("Fuerza por Torón (kN)", value=147.3)
     
     st.header("3. Propiedades Constructivas")
     diametro_ducto = st.number_input("Diámetro del ducto (mm)", value=60.0)
@@ -93,11 +93,11 @@ if csv_file is not None:
         
         # Geometría inicial con la losa
         geom_init = pd.DataFrame({
-            "x": [0.0, L_total], 
-            "b_w": [250.0, 250.0], 
-            "h_w": [500.0, 500.0],
-            "b_lado": [400.0, 400.0],  # Ej: 300mm a cada lado = 850mm total de compresión
-            "h_f": [100.0, 100.0]       # Losa de 10cm
+            "x": [0.0, 5.0, L_total], 
+            "b_w": [250.0, 250, 250.0], 
+            "h_w": [100.0, 500.0, 500.0],
+            "b_lado": [300, 300.0, 300.0],  # Ej: 300mm a cada lado = 850mm total de compresión
+            "h_f": [100.0, 100, 100.0]       # Losa de 10cm
         })
         df_geom_param = st.data_editor(geom_init, num_rows="dynamic", use_container_width=True, hide_index=True)
 
@@ -108,7 +108,7 @@ if csv_file is not None:
             "x": [0.0, L_total/2, L_total], 
             "d_top": [50.0, 50.0, 250.0], 
             "Torones": [3, 3, 3], 
-            "Pérdidas (%)": [15.0, 15.0, 15.0]
+            "Pérdidas (%)": [18.7, 18.75, 18.75]
         })
         df_tendon_param = st.data_editor(tendon_init, num_rows="dynamic", use_container_width=True, hide_index=True)
 
