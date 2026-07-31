@@ -52,9 +52,32 @@ if csv_file is not None:
         )
     
     with col_est:
-        st.subheader("Combinación de Diseño")
-        combos = df_cargas_crudo[col_combo].dropna().unique().tolist()
-        combo_servicio = st.selectbox("Combo para Servicio (Ej. D+L+PT):", combos)
+        st.subheader("Asignación Normativa (NSR-10 C.18.4)")
+        col_combo = 'OutputCase' if 'OutputCase' in df_cargas_crudo.columns else 'Load Case/Combo'
+        combos = ["Ninguno"] + df_cargas_crudo[col_combo].dropna().unique().tolist()
+        
+        # 1. Estado Inicial (C.18.4.1)
+        st.markdown("**1. Etapa de Transferencia (Antes de pérdidas)**")
+        combo_transf = st.selectbox("Cargas al transferir (Ej. PP + PT_Transfer):", combos)
+        
+        # 2. Estados de Servicio (C.18.4.2)
+        st.markdown("**2. Etapa de Servicio (Después de pérdidas)**")
+        combo_serv1 = st.selectbox("Servicio 1 (Ej. PP+D1+PT_Final):", combos)
+        combo_serv2 = st.selectbox("Servicio 2 (Ej. PP+D1+L1+PT_Final):", combos)
+        combo_serv3 = st.selectbox("Servicio 3 (Opcional):", combos)
+        combo_serv4 = st.selectbox("Servicio 4 (Opcional):", combos)
+        
+        # Diccionario para enviar al motor
+        mapeo_combos = {
+            "Transferencia": combo_transf,
+            "Servicio 1": combo_serv1,
+            "Servicio 2": combo_serv2,
+            "Servicio 3": combo_serv3,
+            "Servicio 4": combo_serv4
+        }
+        
+        # Filtrar solo los estados que el usuario sí asignó
+        mapeo_combos = {k: v for k, v in mapeo_combos.items() if v != "Ninguno"}
 
     if not secuencia_vigas:
         st.warning("⚠️ Selecciona al menos una viga para construir el eje.")
