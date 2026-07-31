@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 from engine import construir_alineamiento, construir_geometria, construir_tendon, resolver_estado, generar_insights
 from plots import plot_master_alignment
 
