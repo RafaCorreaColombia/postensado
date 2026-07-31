@@ -19,7 +19,7 @@ st.markdown("Motor paramétrico de diseño, reconstrucción y auditoría de viga
 # --- 1. BARRA LATERAL (CONFIGURACIÓN) ---
 with st.sidebar:
     st.header("1. Carga de Archivos")
-    e2k_file = st.file_uploader("Geometría E2K (Fase 2)", type=['e2k'], disabled=True)
+    e2k_file = st.file_uploader("Geometría E2K (Fase 2)", type=['e2k'], disabled=False)
     csv_file = st.file_uploader("Fuerzas CSV (ETABS)", type=['csv'])
     
     st.header("2. Materiales NSR-10")
