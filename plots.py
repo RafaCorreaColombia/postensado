@@ -22,32 +22,40 @@ def plot_master_alignment(df, lim_comp, lim_tens):
     x = df['x']
     
     # =========================================================================
-    # ROW 1: Geometría Física y Tendón
+    # ROW 1: Geometría Física (Sección T) y Tendón
     # =========================================================================
-    y_top = np.zeros(len(df))     # Fibra superior como y=0 de referencia
-    y_bot = -df['h']              # Fibra inferior
-    y_cg = -df['y_cg']            # Eje Neutro
-    y_tendon = -df['d_top']       # Perfil del tendón
+    y_top = np.zeros(len(df))          # Fibra superior de la losa
+    y_bot_losa = -df['h_f']           # Sombra del espesor de la losa
+    y_bot_viga = -df['h_w']           # Fibra inferior del alma de la viga
+    y_cg = -df['y_cg']                 # Eje Neutro real de la Sección T
+    y_tendon = -df['d_top']            # Perfil del tendón
     
-    # Masa de concreto (Relleno entre top y bot)
+    # Losa Superior (Relleno gris oscuro)
     fig.add_trace(go.Scatter(
         x=x, y=y_top, mode='lines', line=dict(color='black', width=2), 
-        name='Fibra Superior', showlegend=False
+        name='Fibra Superior (Losa)', showlegend=False
     ), row=1, col=1)
     
     fig.add_trace(go.Scatter(
-        x=x, y=y_bot, mode='lines', line=dict(color='black', width=2), 
-        fill='tonexty', fillcolor='rgba(200, 200, 200, 0.3)', 
-        name='Masa de Concreto', showlegend=False
+        x=x, y=y_bot_losa, mode='lines', line=dict(color='gray', width=1, dash='dot'), 
+        fill='tonexty', fillcolor='rgba(180, 180, 180, 0.4)', 
+        name='Losa Monolítica', showlegend=True
     ), row=1, col=1)
-    
-    # Eje Neutro
+
+    # Alma de la Viga (Relleno gris claro)
     fig.add_trace(go.Scatter(
-        x=x, y=y_cg, mode='lines', line=dict(color='gray', width=1, dash='dashdot'), 
-        name='Eje Neutro (CG)'
+        x=x, y=y_bot_viga, mode='lines', line=dict(color='black', width=2), 
+        fill='tonexty', fillcolor='rgba(220, 220, 220, 0.3)', 
+        name='Alma de la Viga', showlegend=True
     ), row=1, col=1)
     
-    # Tendón (Con marcadores para ver la discretización y Hover para la excentricidad)
+    # Eje Neutro Real (Subió por el efecto de la losa)
+    fig.add_trace(go.Scatter(
+        x=x, y=y_cg, mode='lines', line=dict(color='blue', width=1.5, dash='dashdot'), 
+        name='Eje Neutro CG (Sección T)'
+    ), row=1, col=1)
+    
+    # Tendón
     customdata_tendon = np.stack((df['d_top'], df['e']), axis=-1)
     hovertemplate_tendon = "x: %{x:.2f} m<br>d_top: %{customdata[0]:.1f} mm<br>Excentricidad (e): %{customdata[1]:.1f} mm"
     
