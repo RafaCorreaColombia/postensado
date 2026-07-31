@@ -92,21 +92,45 @@ def construir_propiedades_seccion(x_estaciones, df_tramos_geom, diametro_ducto=0
 
 # --- 3. TENDON BUILDER ---
 def construir_tendon(x_estaciones, df_perfil_tendon, P_toron=140.0):
-    """Genera el cable como una entidad separada."""
+    """Genera el cable como una entidad separada considerando pérdidas iniciales y a largo plazo."""
     df_t_limpio = df_perfil_tendon.copy()
+    
     for col in ['x', 'd_top']:
-        df_t_limpio[col] = pd.to_numeric(df_t_limpio[col], errors='coerce')
+        if col in df_t_limpio.columns:
+            df_t_limpio[col] = pd.to_numeric(df_t_limpio[col], errors='coerce')
+            
     df_t_limpio = df_t_limpio.dropna(subset=['x', 'd_top']).sort_values('x')
     
     d_top_interp = np.interp(x_estaciones, df_t_limpio['x'], df_t_limpio['d_top'])
     
-    torones = df_t_limpio['Torones'].dropna().iloc[0] if not df_t_limpio['Torones'].dropna().empty else 3
-    perdidas = df_t_limpio['Pérdidas (%)'].dropna().iloc[0] if not df_t_limpio['Pérdidas (%)'].dropna().empty else 15.0
+    torones = df_t_limpio['Torones'].dropna().iloc[0] if 'Torones' in df_t_limpio.columns and not df_t_limpio['Torones'].dropna().empty else 3
+    
+    # 1. Leer Pérdida Inicial (%) con valores por defecto (12.5%) o compatibilidad hacia atrás
+    if 'Pérdida Inicial (%)' in df_t_limpio.columns and not df_t_limpio['Pérdida Inicial (%)'].dropna().empty:
+        p_ini = df_t_limpio['Pérdida Inicial (%)'].dropna().iloc[0]
+    elif 'Pérdidas (%)' in df_t_limpio.columns and not df_t_limpio['Pérdidas (%)'].dropna().empty:
+        p_ini = df_t_limpio['Pérdidas (%)'].dropna().iloc[0]
+    else:
+        p_ini = 12.5
+        
+    # 2. Leer Pérdida a Largo Plazo (%) con valor por defecto (6.25%)
+    if 'Pérdida Largo Plazo (%)' in df_t_limpio.columns and not df_t_limpio['Pérdida Largo Plazo (%)'].dropna().empty:
+        p_lp = df_t_limpio['Pérdida Largo Plazo (%)'].dropna().iloc[0]
+    else:
+        p_lp = 6.25
     
     df_t = pd.DataFrame({'x': x_estaciones, 'd_top': d_top_interp})
     df_t['Torones'] = torones
-    df_t['P_PT_Final'] = torones * P_toron * (1 - perdidas/100.0)
-    df_t['P_PT_Transfer'] = torones * P_toron 
+    
+    # Fuerza total inicial en el gato (Jacking Force)
+    P_jacking = torones * P_toron
+    
+    # --- MATEMÁTICA DE PÉRDIDAS ---
+    # Transferencia: Se descuenta la pérdida inicial apenas se suelta el gato (ej. 12.5%)
+    df_t['P_PT_Transfer'] = P_jacking * (1.0 - p_ini / 100.0)
+    
+    # Servicio / Final: A partir de la fuerza de transferencia, se aplica la pérdida a largo plazo (ej. 6.25%)
+    df_t['P_PT_Final'] = df_t['P_PT_Transfer'] * (1.0 - p_lp / 100.0)
     
     return df_t
 
