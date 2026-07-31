@@ -96,7 +96,7 @@ if csv_file is not None:
             "x": [0.0, L_total], 
             "b_w": [250.0, 250.0], 
             "h_w": [500.0, 500.0],
-            "b_lado": [300.0, 300.0],  # Ej: 300mm a cada lado = 850mm total de compresión
+            "b_lado": [400.0, 400.0],  # Ej: 300mm a cada lado = 850mm total de compresión
             "h_f": [100.0, 100.0]       # Losa de 10cm
         })
         df_geom_param = st.data_editor(geom_init, num_rows="dynamic", use_container_width=True, hide_index=True)
@@ -106,7 +106,7 @@ if csv_file is not None:
         st.caption("💡 **Unidades:** **x** (m), **d_top** (mm desde fibra superior de losa), **Pérdidas** (%).")
         tendon_init = pd.DataFrame({
             "x": [0.0, L_total/2, L_total], 
-            "d_top": [50.0, 400.0, 50.0], 
+            "d_top": [50.0, 50.0, 250.0], 
             "Torones": [3, 3, 3], 
             "Pérdidas (%)": [15.0, 15.0, 15.0]
         })
