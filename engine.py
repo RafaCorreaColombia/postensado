@@ -147,8 +147,8 @@ def resolver_multiestado(df_fuerzas_multi, df_geom, df_tendon):
     
     # 2. Excentricidad paramétrica
     # (y_cg se mide desde arriba, d_top se mide desde arriba. 
-    # Si d_top > y_cg, el cable está abajo, excentricidad positiva hacia abajo para generar compresión abajo)
-    df['e'] = df['d_top'] - df['y_cg'] 
+    # Si d_top > y_cg, el cable está abajo, la excentricidad genera compresión abajo)
+    df['e'] = df['y_cg'] - df['d_top'] 
     
     # 3. Propiedades de Sección (Descuento de ductos en Transferencia)
     df['A_calc'] = np.where(df['Estado'] == 'Transferencia', df['A_bruta'] - df['A_ducto'], df['A_bruta'])
