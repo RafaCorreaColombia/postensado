@@ -129,9 +129,16 @@ if csv_file is not None:
     estado_ver_elegido = st.radio("Filtro de Visualización:", df_master['Estado'].unique(), horizontal=True)
     df_plot = df_master[df_master['Estado'] == estado_ver_elegido]
     
-    # Límites Normativos
-    lim_comp = 0.60 * fci if estado_ver_elegido == 'Transferencia' else 0.45 * fc
-    lim_tens = -0.25 * np.sqrt(fci) if estado_ver_elegido == 'Transferencia' else -0.62 * np.sqrt(fc)
+    # Límites Normativos dinámicos según el estado que se esté visualizando
+    if estado_ver_elegido == 'Transferencia':
+        lim_comp = 0.60 * fci
+        lim_tens = -0.25 * np.sqrt(fci)
+    elif 'Servicio 2' in estado_ver_elegido:
+        lim_comp = 0.60 * fc
+        lim_tens = -0.62 * np.sqrt(fc)
+    else: # Servicio 1 o permanente por defecto
+        lim_comp = 0.45 * fc
+        lim_tens = -0.62 * np.sqrt(fc)
 
     # Gráfica Sincronizada (Las 3 gráficas atadas al mismo eje X)
     fig = plot_master_alignment(df_plot, lim_comp, lim_tens)
