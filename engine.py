@@ -34,10 +34,6 @@ def construir_alineamiento(df_cargas_crudo, story, secuencia_vigas, mapeo_combos
             df_eje['Estado'] = estado
             df_total = pd.concat([df_total, df_eje.sort_values('x').reset_index(drop=True)])
             
-    if not df_total.empty:
-        # 💡 SOLUCIÓN MAESTRA: Eliminar nodos duplicados en las uniones de vigas (ej. fin de viga 1 = inicio de viga 2)
-        df_total = df_total.drop_duplicates(subset=['Estado', 'x'], keep='first').sort_values(['Estado', 'x']).reset_index(drop=True)
-    
     return df_total
 
 # --- 2. SECTION BUILDER (SECCIÓN T RIGUROSA - MEDIDA DESDE EL TOP) ---
