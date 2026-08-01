@@ -158,7 +158,7 @@ def plot_master_alignment(df, lim_comp, lim_tens):
     
     fig.update_yaxes(title_text="Elevación (mm)", row=1, col=1)
     fig.update_yaxes(title_text="Fuerza (kN)", row=2, col=1)
-    fig.update_yaxes(title_text="Momento (kN-m)", row=3, col=1)
+    fig.update_yaxes(title_text="Momento (kN-m)", autorange="reversed", row=3, col=1)
     fig.update_yaxes(title_text="Esfuerzo (MPa)", row=4, col=1)
     fig.update_xaxes(title_text="Estación Global del Eje (m)", row=4, col=1)
     
