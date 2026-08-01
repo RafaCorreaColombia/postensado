@@ -64,8 +64,8 @@ if csv_file is not None:
         # Mapeo del ciclo de vida
         mapeo_combos = {
             "Transferencia": st.selectbox("Etapa Transferencia (PP + PT_Transfer):", combos, index=combos.index('s1PP') if 's1PP' in combos else 0),
-            "Servicio 1 (Permanente)": st.selectbox("Servicio 1 (Ej. PP+D+PT_Final):", combos, index=combos.index('s1PPD1') if 's1PPD1' in combos else 0),
-            "Servicio 2 (Total)": st.selectbox("Servicio 2 (Ej. PP+D+L+PT_Final):", combos, index=combos.index('s1PPD1L1') if 's1PPD1L1' in combos else 0)
+            "Servicio 1 (Permanente)": st.selectbox("Servicio 1 [Permanente] (Ej. PP+D+PT_Final):", combos, index=combos.index('s1PPD1') if 's1PPD1' in combos else 0),
+            "Servicio 2 (Total)": st.selectbox("Servicio 2 [Total] (Ej. PP+D+L+PT_Final):", combos, index=combos.index('s1PPD1L1') if 's1PPD1L1' in combos else 0)
         }
 
     if not secuencia_vigas:
