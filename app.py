@@ -63,9 +63,9 @@ if csv_file is not None:
         
         # Mapeo del ciclo de vida
         mapeo_combos = {
-            "Transferencia": st.selectbox("Etapa Transferencia (PP + PT_Transfer):", combos, index=combos.index('s3PPPTransf') if 's3PPPTransf' in combos else 0),
-            "Servicio 1 (Permanente)": st.selectbox("Servicio 1 (Ej. PP+D+PT_Final):", combos, index=combos.index('s3PPD1PTfinal') if 's3PPD1PTfinal' in combos else 0),
-            "Servicio 2 (Total)": st.selectbox("Servicio 2 (Ej. PP+D+L+PT_Final):", combos, index=combos.index('s3PPD1L1PTfinal') if 's3PPD1L1PTfinal' in combos else 0)
+            "Transferencia": st.selectbox("Etapa Transferencia (PP + PT_Transfer):", combos, index=combos.index('s1PP') if 's1PP' in combos else 0),
+            "Servicio 1 (Permanente)": st.selectbox("Servicio 1 (Ej. PP+D+PT_Final):", combos, index=combos.index('s1PPD1') if 's1PPD1' in combos else 0),
+            "Servicio 2 (Total)": st.selectbox("Servicio 2 (Ej. PP+D+L+PT_Final):", combos, index=combos.index('s1PPD1L1') if 's1PPD1L1' in combos else 0)
         }
 
     if not secuencia_vigas:
@@ -93,7 +93,7 @@ if csv_file is not None:
         
         # Geometría inicial con la losa
         geom_init = pd.DataFrame({
-            "x": [0.0, 5.0, L_total], 
+            "x": [0.0, 2.5, L_total], 
             "b_w": [250.0, 250, 250.0], 
             "h_w": [100.0, 500.0, 500.0],
             "b_lado": [300, 300.0, 300.0],  # Ej: 300mm a cada lado = 850mm total de compresión
