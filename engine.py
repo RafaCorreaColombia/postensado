@@ -36,16 +36,13 @@ def construir_alineamiento(df_cargas_crudo, story, secuencia_vigas, mapeo_combos
             
     return df_total
 
-# --- 2. SECTION BUILDER (SOPORTE SECCIÓN T / LOSA MONOLÍTICA) ---
+# --- 2. SECTION BUILDER (SECCIÓN T RIGUROSA - MEDIDA DESDE EL TOP) ---
 def construir_propiedades_seccion(x_estaciones, df_tramos_geom, diametro_ducto=0.0):
     """
-    Calcula propiedades geométricas para sección T/L (Viga + Losa monolítica).
-    Fibra superior de la losa coincide con la fibra superior de la viga.
+    Calcula propiedades geométricas para sección T/L medida desde la fibra superior hacia abajo (y=0 arriba).
     """
     df_g_limpio = df_tramos_geom.copy()
     
-    # Columnas esperadas: x, b_w, h_w, b_lado, h_f
-    # (b_w = ancho alma, h_w = altura viga, b_lado = ala a cada lado, h_f = espesor losa)
     cols_num = ['x', 'b_w', 'h_w', 'b_lado', 'h_f']
     for col in cols_num:
         if col in df_g_limpio.columns:
@@ -53,38 +50,42 @@ def construir_propiedades_seccion(x_estaciones, df_tramos_geom, diametro_ducto=0
             
     df_g_limpio = df_g_limpio.dropna(subset=['x', 'b_w', 'h_w']).sort_values('x')
     
-    # 1. Interpolación de componentes geométricas
+    # 1. Interpolación de componentes
     b_w = np.interp(x_estaciones, df_g_limpio['x'], df_g_limpio['b_w'])
     h_w = np.interp(x_estaciones, df_g_limpio['x'], df_g_limpio['h_w'])
     b_lado = np.interp(x_estaciones, df_g_limpio['x'], df_g_limpio['b_lado']) if 'b_lado' in df_g_limpio.columns else np.zeros(len(x_estaciones))
     h_f = np.interp(x_estaciones, df_g_limpio['x'], df_g_limpio['h_f']) if 'h_f' in df_g_limpio.columns else np.zeros(len(x_estaciones))
     
     df_g = pd.DataFrame({'x': x_estaciones, 'b_w': b_w, 'h_w': h_w, 'b_lado': b_lado, 'h_f': h_f})
+    df_g['h'] = df_g['h_w'] # Peralte total
     
-    # Ancho total del ala (b_total = b_w + 2 * b_lado)
-    df_g['b_total'] = df_g['b_w'] + 2.0 * df_g['b_lado']
-    df_g['h'] = df_g['h_w'] # Peralte total de la viga
+    # Ancho total del ala (b_w + a cada lado)
+    b_total = df_g['b_w'] + 2.0 * df_g['b_lado']
     
-    # 2. Mecánica de Sección T (Áreas)
-    # A_losa_sobresaliente = 2 * b_lado * h_f
-    A_web = df_g['b_w'] * df_g['h_w']
-    A_flange = 2.0 * df_g['b_lado'] * df_g['h_f']
-    df_g['A_bruta'] = A_web + A_flange
+    # 2. Desglose de Componentes de la Sección T (Desde el Top y=0)
+    # A. Ala (Flange): Ancho b_total, Altura h_f
+    A_flange = b_total * df_g['h_f']
+    y_flange = df_g['h_f'] / 2.0  # Centroide del ala desde arriba
     
-    # 3. Centroide medido desde la fibra superior (y_cg)
-    # y_cg = (A_web * (h_w/2) + A_flange * (h_f/2)) / A_bruta
-    y_web = df_g['h_w'] / 2.0
-    y_flange = df_g['h_f'] / 2.0
+    # B. Alma restante (Web): Ancho b_w, Altura (h_w - h_f)
+    h_web_real = np.maximum(df_g['h_w'] - df_g['h_f'], 0.0) # Evitar alturas negativas
+    A_web = df_g['b_w'] * h_web_real
+    y_web = df_g['h_f'] + (h_web_real / 2.0)  # Centroide del alma desde arriba
+    
+    # 3. Propiedades Brutas Totales
+    df_g['A_bruta'] = A_flange + A_web
+    
+    # Centroide de la sección T medido desde la fibra superior (y_cg)
     df_g['y_cg'] = np.where(df_g['A_bruta'] > 0, 
-                            (A_web * y_web + A_flange * y_flange) / df_g['A_bruta'], 
+                            (A_flange * y_flange + A_web * y_web) / df_g['A_bruta'], 
                             df_g['h_w'] / 2.0)
     
-    # 4. Inercia Bruta (Steiner respecto a y_cg)
-    I_web = (df_g['b_w'] * df_g['h_w']**3) / 12.0 + A_web * (df_g['y_cg'] - y_web)**2
-    I_flange = (2.0 * df_g['b_lado'] * df_g['h_f']**3) / 12.0 + A_flange * (df_g['y_cg'] - y_flange)**2
-    df_g['I_bruta'] = I_web + I_flange
+    # 4. Inercia Bruta (Teorema de Steiner respecto al eje y_cg de la sección T)
+    I_flange = (b_total * df_g['h_f']**3) / 12.0 + A_flange * (df_g['y_cg'] - y_flange)**2
+    I_web = (df_g['b_w'] * h_web_real**3) / 12.0 + A_web * (df_g['y_cg'] - y_web)**2
+    df_g['I_bruta'] = I_flange + I_web
     
-    # 5. Descuento de Ductos
+    # 5. Descuento de Ductos (NSR-10 C.18.2.6)
     A_ducto = np.pi * (diametro_ducto**2) / 4.0
     df_g['A_ducto'] = A_ducto
     
