@@ -190,22 +190,33 @@ def resolver_multiestado(df_fuerzas_multi, df_geom, df_tendon):
 
 # --- 5. AUDITOR DE SERVICIO ESTRUCTURADO ---
 def generar_insights(df, fc, fci):
-    """Devuelve un DataFrame estructurado con los chequeos normativos (No solo texto)."""
+    """Devuelve un DataFrame estructurado con los chequeos normativos diferenciando estados de servicio."""
     chequeos = []
     estados = df['Estado'].unique()
     
+    # 💡 Límites ajustados según NSR-10 C.18.4
     limites = {
-        'Transferencia': {'Compresión': 0.60 * fci, 'Tensión': -0.25 * np.sqrt(fci)},
-        'Servicio': {'Compresión': 0.45 * fc, 'Tensión': -0.62 * np.sqrt(fc)}
+        'Transferencia': {
+            'Compresión': 0.60 * fci, 
+            'Tensión': -0.25 * np.sqrt(fci)
+        },
+        'Servicio 1 (Permanente)': {
+            'Compresión': 0.45 * fc, 
+            'Tensión': -0.62 * np.sqrt(fc)
+        },
+        'Servicio 2 (Total)': {
+            'Compresión': 0.60 * fc, 
+            'Tensión': -0.62 * np.sqrt(fc)
+        }
     }
     
     for estado in estados:
         df_e = df[df['Estado'] == estado]
         if df_e.empty: continue
             
-        tipo_lim = 'Transferencia' if estado == 'Transferencia' else 'Servicio'
-        lim_comp = limites[tipo_lim]['Compresión']
-        lim_tens = limites[tipo_lim]['Tensión']
+        # Buscar límites según el nombre exacto del estado (con fallback por seguridad)
+        lim_comp = limites.get(estado, limites['Servicio 1 (Permanente)'])['Compresión']
+        lim_tens = limites.get(estado, limites['Servicio 1 (Permanente)'])['Tensión']
         
         for _, row in df_e.iterrows():
             # Chequeo Top
