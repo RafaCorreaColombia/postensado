@@ -28,7 +28,7 @@ with st.sidebar:
     P_toron = st.number_input("Fuerza por Torón (kN)", value=147.3)
     
     st.header("3. Propiedades Constructivas")
-    diametro_ducto = st.number_input("Diámetro del ducto (mm)", value=60.0)
+    diametro_ducto = st.number_input("Diámetro del ducto (mm)", value=40.0)
 
 # --- 2. ORQUESTACIÓN DEL EJE ---
 if csv_file is not None:
