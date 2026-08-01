@@ -137,38 +137,40 @@ if csv_file is not None:
     fig = plot_master_alignment(df_plot, lim_comp, lim_tens)
     st.plotly_chart(fig, use_container_width=True)
 
-    # 1. Obtener los puntos 'x' predefinidos que el usuario ingresó en la tabla del tendón
-    # (Asumiendo que tu DataFrame de entrada del tendón se llama df_tendon_param)
-    puntos_control = df_tendon_param['x'].tolist()
-    
-    # 2. Filtrar el DataFrame maestro buscando las filas cuyos valores de 'x' 
-    # coincidan (con un redondeo de 2 decimales para evitar problemas de punto flotante) con los puntos de control
-    df_filtrado = df[df['x'].round(2).isin([round(p, 2) for p in puntos_control])]
-    
-    # 3. Mostrar la tabla con las columnas seleccionadas en Streamlit
-    st.subheader("📋 Auditoría en Puntos de Control del Tendón")
-    st.dataframe(
-        df_filtrado[[
-            'x', # ¡Importante incluir x para saber en qué estación estamos!
-            'P_PT',
-            'M_PT',
-            'M_Frame',
-            'M_Neto',
-            'A_calc',
-            'I_calc',
-            'S_top',
-            'S_bot',
-            'Sigma_Axial_PT',
-            'Sigma_M_PT_Top',
-            'Sigma_M_PT_Bot',
-            'Sigma_M_Frame_Top',
-            'Sigma_M_Frame_Bot',
-            'Sigma_Top',
-            'Sigma_Bot'
-        ]],
-        use_container_width=True,
-        hide_index=True
-    )
+
+        # Auditoría para revisar esfuerzos
+        # 1. Obtener los puntos 'x' predefinidos que el usuario ingresó en la tabla del tendón
+        # (Asumiendo que tu DataFrame de entrada del tendón se llama df_tendon_param)
+        puntos_control = df_tendon_param['x'].tolist()
+        
+        # 2. Filtrar el DataFrame maestro buscando las filas cuyos valores de 'x' 
+        # coincidan (con un redondeo de 2 decimales para evitar problemas de punto flotante) con los puntos de control
+        df_filtrado = df_plot[df_plot['x'].round(2).isin([round(p, 2) for p in puntos_control])]
+        
+        # 3. Mostrar la tabla con las columnas seleccionadas en Streamlit
+        st.subheader("📋 Auditoría en Puntos de Control del Tendón")
+        st.dataframe(
+            df_filtrado[[
+                'x', # ¡Importante incluir x para saber en qué estación estamos!
+                'P_PT',
+                'M_PT',
+                'M_Frame',
+                'M_Neto',
+                'A_calc',
+                'I_calc',
+                'S_top',
+                'S_bot',
+                'Sigma_Axial_PT',
+                'Sigma_M_PT_Top',
+                'Sigma_M_PT_Bot',
+                'Sigma_M_Frame_Top',
+                'Sigma_M_Frame_Bot',
+                'Sigma_Top',
+                'Sigma_Bot'
+            ]],
+            use_container_width=True,
+            hide_index=True
+        )
 
 
     
